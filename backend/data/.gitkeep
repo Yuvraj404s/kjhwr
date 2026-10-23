@@ -1,0 +1,2 @@
+# Raw Elexon JSON pulled by scripts/fetch_and_process.py is cached here (gitignored).
+# Delete any windfor_*.json / fuelhh_wind.json files to force a re-fetch.
