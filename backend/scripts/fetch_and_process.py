@@ -18,7 +18,7 @@ what makes the forecast-vs-actual evaluation honest (no look-ahead bias).
 Outputs (written to frontend/public/data/):
   actuals.json         actual 30-min wind generation, Jan 2026
   forecast_da.json     the day-ahead forecast run (decision time) vs actuals
-  forecast_da.json     day-ahead decision-time forecast vs actuals
+  latest_forecast.json     day-ahead decision-time forecast vs actuals
   metrics.json         full accuracy evaluation (point + probabilistic-ish)
   meta.json            provenance / freshness / caveats
 
@@ -27,7 +27,6 @@ No third-party heavy deps beyond `requests`; analysis is pure Python (stdlib).
 import json
 import math
 import os
-import sys
 import time
 import urllib.request
 from datetime import datetime, timedelta, timezone
