@@ -177,16 +177,19 @@ async function j<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+const dataPath = (snapshotPath: string, apiPath: string) =>
+  import.meta.env.VITE_DATA_SOURCE === "api" ? apiPath : snapshotPath;
+
 let cache: Promise<WindData> | null = null;
 export function loadData(): Promise<WindData> {
   if (!cache) {
     cache = (async () => {
       const [actuals, da, metrics, meta, latest] = await Promise.all([
-        j<ActualPoint[]>("/data/actuals.json"),
-        j<DaPoint[]>("/data/forecast_da.json"),
-        j<Metrics>("/data/metrics.json"),
-        j<Meta>("/data/meta.json"),
-        j<LatestForecast>("/data/latest_forecast.json").catch(() => null),
+        j<ActualPoint[]>(dataPath("/data/actuals.json", "/api/actuals")),
+        j<DaPoint[]>(dataPath("/data/forecast_da.json", "/api/forecast-da")),
+        j<Metrics>(dataPath("/data/metrics.json", "/api/metrics")),
+        j<Meta>(dataPath("/data/meta.json", "/api/meta")),
+        j<LatestForecast>(dataPath("/data/latest_forecast.json", "/api/latest")).catch(() => null),
       ]);
       return { actuals, da, metrics, meta, latest };
     })();

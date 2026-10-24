@@ -3,10 +3,13 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_DATA_SOURCE: api
     ports:
       - "8080:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
   backend:
@@ -16,5 +19,12 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - WINDSCOPE_LIVE=0   # set to 1 for on-demand live re-fetch from Elexon
+      - WINDSCOPE_LIVE=1
+      - WINDSCOPE_REFRESH_ON_START=1
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 180s
     restart: unless-stopped

@@ -23,10 +23,11 @@ npm run preview     # serve the build locally
 ### Option B — Full stack with Docker (frontend + Python API)
 ```bash
 docker compose up --build
-# Web app  → http://localhost:8080   (nginx static SPA + /data snapshot)
+# Web app  → http://localhost:8080   (nginx SPA; loads data through the API)
 # Python API → http://localhost:8000/api/health   (FastAPI)
-# WINDSCOPE_LIVE=1 enables on-demand live re-fetch from Elexon for /api/live/*
+# Backend refreshes the Elexon inputs and recomputes the dataset before serving requests.
 ```
+The refresh re-fetches the app's fixed January 2026 analysis period; it is not a continuously updated forecast for the current day.
 
 ### Option C — Python backend only - REST API (FastAPI)
 ```bash
@@ -37,8 +38,8 @@ uvicorn server.main:app --port 8000
 ```
 Endpoints: `/api/health` · `/api/meta` · `/api/actuals` · `/api/forecast-da?date=2026-01-12` · `/api/metrics` · `/api/evolution?date=2026-01-12` · `/api/latest`
 
-### Regenerate the data (optional) - Python ETL / analytics (stdlib + urllib only — no pandas/numpy needed)
-The app ships with a precomputed snapshot in `frontend/public/data/*.json`, so you don't need this to run it. To rebuild it from Elexon:
+### Regenerate the data manually - Python ETL / analytics (stdlib + urllib only — no pandas/numpy needed)
+The app ships with a precomputed snapshot in `frontend/public/data/*.json` for frontend-only use. To rebuild it from Elexon manually:
 ```bash
 python3 backend/scripts/fetch_and_process.py
 # pulls FUELHH + WINDFOR from Elexon (caches raw JSON in backend/data/raw/),
@@ -46,6 +47,7 @@ python3 backend/scripts/fetch_and_process.py
 # applies the decision-time rule (latest publish ≤ 10:00 UTC on D−1),
 # computes every metric and writes frontend/public/data/*.json
 ```
+In Docker Compose full-stack mode, this ETL runs automatically on backend startup and refreshes the Elexon inputs rather than using the ETL raw-data cache.
 
 ## What's inside
 - **Overview** — January 2026 at a glance: 8.62 TWh metered, +1.84 GW (+15.9%) day-ahead over-forecast, R² = 0.86, P90 |err| = 4,334 MW.

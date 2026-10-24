@@ -35,6 +35,7 @@ from datetime import datetime, timedelta, timezone
 BASE = "https://data.elexon.co.uk/bmrs/api/v1/datasets"
 RAW = os.path.join(os.path.dirname(__file__), "..", "data", "raw")
 OUT = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "public", "data")
+FORCE_REFRESH = os.environ.get("WINDSCOPE_REFRESH_ON_START", "0") == "1"
 os.makedirs(RAW, exist_ok=True)
 os.makedirs(OUT, exist_ok=True)
 
@@ -42,7 +43,7 @@ UTC = timezone.utc
 
 def http_json(url, cache_name, retries=3):
     cache_path = os.path.join(RAW, cache_name)
-    if os.path.exists(cache_path):
+    if os.path.exists(cache_path) and not FORCE_REFRESH:
         with open(cache_path) as f:
             return json.load(f)
     last_err = None
@@ -107,6 +108,8 @@ def fetch_all_forecasts():
             rows = fetch_forecasts_for_day(day)
             all_rows.extend(rows)
         except Exception as e:  # noqa: BLE001
+            if FORCE_REFRESH:
+                raise RuntimeError(f"Could not refresh WINDFOR data for {day.date()}") from e
             print(f"  WARNING: could not fetch {day.date()}: {e}", flush=True)
         day += timedelta(days=1)
         time.sleep(0.4)
@@ -420,9 +423,13 @@ def build_latest_forecast(actuals):
         try:
             all_rows.extend(http_json(url, f"windfor_latest_{d0}.json"))
         except Exception as e:
+            if FORCE_REFRESH:
+                raise RuntimeError(f"Could not refresh latest WINDFOR data for {d0}") from e
             print(f"  WARNING: latest-forecast fetch failed for {d0}: {e}", flush=True)
         day += timedelta(days=1)
         time.sleep(0.3)
+    if not all_rows and FORCE_REFRESH:
+        raise RuntimeError("Could not refresh latest WINDFOR data: Elexon returned no rows")
     if not all_rows:
         return None
     pubs = {}
